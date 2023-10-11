@@ -14,31 +14,23 @@
 
             <div v-if="!isCreatingNote" class="custom-height" style="overflow:auto;">
               <div class="fw-bold px-4 d-grid d-sm-flex justify-content-sm-end">
-                <button type="button" class="btn btn-outline-primary" @click="createNote">새 노트 생성</button>
+                <button type="button" class="btn btn-outline-primary" @click="changeNoteScreen">새 노트 생성</button>
               </div>
               <hr>
               <div class="list-grop px-4">
-                <note-item></note-item>
+                <note-item
+                  v-for="note in noteList"
+                  :key="note.noteId"
+                  :noteId="note.noteId"
+                  :title="note.title"
+                  :description="note.description"
+                  :at="note.updatedAt ? note.updatedAt : note.createdAt"
+                ></note-item>
               </div>
             </div>
 
             <div v-if="isCreatingNote" class="custom-height">
-              <div class="fw-bold d-grid d-sm-flex justify-content-sm-end">
-                생성 창 닫기
-                <button type="button" class="btn-close" @click="createNote"></button>
-              </div>
-              <hr>
-              <form class="py-3 px-3">
-                <div class="mb-3">
-                  <label for="name" class="form-label">노트 이름</label>
-                  <input class="form-control" type="text" placeholder="제목없음" />
-                </div>
-                <div class="mb-3">
-                  <label for="description" class="form-label">노트 설명</label>
-                  <textarea class="form-control" rows="7"></textarea>
-                </div>
-                <button class="btn btn-primary btn-lg" type="submit">노트 생성</button>
-              </form>
+              <note-registration @switch-list="changeNoteScreen"></note-registration>
             </div>
           </div>
         </div>
@@ -49,19 +41,39 @@
 
 <script>
 import NoteItem from '@/components/notes/NoteItem.vue'
+import NoteRegistration from '@/components/notes/NoteRegistration.vue'
 
 export default {
   components: {
-    NoteItem
+    NoteItem,
+    NoteRegistration
   },
   data () {
     return {
-      isCreatingNote: false
+      isCreatingNote: false,
+      isLoding: false,
+      error: null
     }
   },
+  computed: {
+    noteList () {
+      return this.$store.getters['notes/noteList']
+    }
+  },
+  created () {
+    this.loadNoteList()
+  },
   methods: {
-    createNote () {
+    changeNoteScreen () {
       this.isCreatingNote = !this.isCreatingNote
+      this.loadNoteList()
+    },
+    async loadNoteList () {
+      try {
+        await this.$store.dispatch('notes/loadNoteList')
+      } catch (error) {
+        this.error = error.message || 'Something went wrong!'
+      }
     }
   }
 }

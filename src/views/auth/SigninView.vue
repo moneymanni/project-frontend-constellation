@@ -3,17 +3,18 @@
     <base-modal :showClose="false" title="Please sign in" @close="handleClose">
       <form @submit.prevent="submitForm">
         <div class="form-floating mb-3">
-          <input type="email" class="form-control rounded-3" id="floatingInput" placeholder="name@example.com">
-          <label for="floatingInput">Email address</label>
+          <input type="email" class="form-control rounded-3" id="email" placeholder="example@example.com" v-model.trim="email" />
+          <label for="email">Email address</label>
         </div>
 
         <div class="form-floating mb-3">
-          <input type="password" class="form-control rounded-3" id="floatingPassword" placeholder="Password">
-          <label for="floatingPassword">Password</label>
+          <input type="password" class="form-control rounded-3" id="password" placeholder="Password" v-model.trim="password">
+          <label for="password">Password</label>
         </div>
 
-        <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary" type="submit">Sign in</button>
+        <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary">Sign in</button>
       </form>
+      <p v-if="!formIsValid">사용자 정보가 틀렸습니다. 다시 입력해주세요.</p>
       <div class="d-grid d-sm-flex justify-content-sm-end px-2">
         <button type="button" class="btn btn-link" @click="goToSignup">Sign up</button>
       </div>
@@ -38,11 +39,43 @@ export default {
   components: {},
   data () {
     return {
-      isSignup: false
+      isSignup: false,
+      email: '',
+      password: '',
+      error: null,
+      formIsValid: true,
+      isLoading: false
     }
   },
   methods: {
-    submitForm () {},
+    async submitForm () {
+      // this.formIsValid = true
+      // if (
+      //   this.email === '' ||
+      //   !this.email.includes('@') ||
+      //   this.password.length < 6
+      // ) {
+      //   this.formIsValid = false
+      //   return
+      // }
+
+      this.isLoading = true
+
+      const actionPayload = {
+        email: this.email,
+        password: this.password
+      }
+
+      try {
+        await this.$store.dispatch('login', actionPayload)
+        const redirectUrl = '/' + (this.$route.query.redirect || 'notes')
+        this.$router.replace(redirectUrl)
+      } catch (error) {
+        this.error = error.message || 'Failed to authenticate, try later.'
+      }
+
+      this.isLoading = false
+    },
     handleClose () {},
     goToSignup () {
       return this.$router.push('/auth/signup')

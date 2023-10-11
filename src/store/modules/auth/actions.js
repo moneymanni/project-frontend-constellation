@@ -3,16 +3,20 @@ let timer // eslint-disable-line no-unused-vars
 export default {
   async auth (context, payload) {
     const mode = payload.mode
-    let url = ''
+    let url = 'http://127.0.0.1:5000/auth/sign-in'
 
     if (mode === 'signup') {
-      url = ''
+      url = 'http://127.0.0.1:5000/user/sign-up'
     }
     const response = await fetch(url, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         email: payload.email,
-        password: payload.password
+        password: payload.password,
+        profile: 'none'
       })
     })
 
@@ -24,11 +28,11 @@ export default {
       throw error
     }
 
-    const expiresIn = +responseData.expiresIn * 1000
+    const expiresIn = +responseData.tokenExpiration * 1000
     const expirationData = new Date().getTime() + expiresIn
 
     localStorage.setItem('accessToken', responseData.accessToken)
-    localStorage.setItem('userId', responseData.userId)
+    localStorage.setItem('userId', responseData.data.userId)
     localStorage.setItem('tokenExpiration', expirationData)
 
     timer = setTimeout(function () {
@@ -36,8 +40,8 @@ export default {
     }, expiresIn)
 
     context.commit('setUser', {
-      token: responseData.accessToken,
-      userId: responseData.userId
+      accessToken: responseData.accessToken,
+      userId: responseData.data.userId
     })
   },
   async login (context, payload) {
