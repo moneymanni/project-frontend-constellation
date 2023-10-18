@@ -5,8 +5,32 @@
       <div class="sidebar border border-right col-md-3 col-lg-2 p-0 bg-body-tertiary">
         <resources-list :pageList="this.$store.getters['pages/pageList']" @select-page="selectPage" @add-page="addPage"></resources-list>
       </div>
+
       <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-        <print-resource :pageIsSelected="pageIsSelected" @change-graph="changeGraph"></print-resource>
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <!-- <h1 class="h2">Dashboard</h1> -->
+          <h1 class="h2"></h1>
+          <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+              <button id="content" type="button" class="btn btn-sm btn-outline-secondary" @click="changeCpnContent">Content</button>
+              <button id="graph" type="button" class="btn btn-sm btn-outline-secondary" @click="changeCpnGraph">Graph</button>
+            </div>
+            <!-- <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
+              This week
+            </button> -->
+          </div>
+        </div>
+        <keep-alive>
+          <component
+            :is="selectedComponent"
+            :page="this.selectedPage"
+            :graphElements="this.$store.getters['pages/graphElements']"
+            @add-page="addPage"
+            @change-header="changePageHeader"
+            @change-content="changePageContent"
+            @update-link="updateLink"
+            @delete-page="deletePage"></component>
+        </keep-alive>
       </main>
     </div>
   </div>
@@ -14,34 +38,26 @@
 
 <script>
 import TheHeader from '@/components/layout/TheHeader.vue'
-import PrintResource from '@/components/pages/PrintResource.vue'
 import ResourcesList from '@/components/pages/ResourcesList.vue'
-import cytoscape from 'cytoscape'
+import ResourceContent from '@/components/pages/ResourceContent.vue'
+import ResourceGraph from '@/components/pages/ResourceGraph.vue'
 
 export default {
   components: {
     TheHeader,
-    PrintResource,
-    ResourcesList
-  },
-  provide () {
-    return {
-      page: this.selectedPage,
-      changeHeader: this.changePageHeader,
-      changeContent: this.changePageContent,
-      deletePage: this.deletePage,
-      updateLink: this.updateLink,
-      showGraph: this.showGraph
-    }
+    ResourcesList,
+    ResourceContent,
+    ResourceGraph
   },
   props: ['noteId'],
   data () {
     return {
-      pageIsSelected: 'graph',
+      selectedComponent: 'resource-graph',
       selectedPage: {
         id: null,
         title: '',
         keyword: '',
+        tag: [],
         content: '',
         linkedPageId: null,
         linkedPageKeyword: ''
@@ -49,19 +65,30 @@ export default {
       error: null
     }
   },
-  created () {
+  async created () {
     this.setNoteId()
-    this.loadPageList()
-    this.loadNodeList()
-    this.loadEdgeList()
+    await this.loadPageList()
+    await this.loadNodeList()
+    await this.loadEdgeList()
+    this.$store.dispatch('pages/prepareGraphElements')
   },
   methods: {
+    changeCpnContent () {
+      if (this.selectedPage.id === null) {
+        return
+      }
+      this.selectedComponent = 'resource-content'
+      this.$store.dispatch('pages/prepareGraphElements')
+    },
+    changeCpnGraph () {
+      this.selectedComponent = 'resource-graph'
+      this.$store.dispatch('pages/prepareGraphElements')
+    },
     selectPage (pageId) {
       const pageList = this.$store.getters['pages/pageList'] || []
       const nodeList = this.$store.getters['pages/nodeList'] || []
       const edgeList = this.$store.getters['pages/edgeList'] || []
 
-      this.pageIsSelected = 'change'
       const identifiedPage = pageList.find(page => page.pageId === pageId)
       this.selectedPage.id = identifiedPage.pageId
       this.selectedPage.title = identifiedPage.title
@@ -77,49 +104,66 @@ export default {
         this.selectedPage.linkedPageId = null
         this.selectedPage.linkedPageKeyword = ''
       }
+      this.changeCpnContent()
     },
-    async addPage () {
-      await this.$store.dispatch('pages/addPage').then((response) => {
-        this.loadPageList()
-        this.loadNodeList()
-        this.$store.dispatch('pages/prepareGraphElements')
-      })
+    async addPage (title, keyword, linkedPageKeyword) {
+      const data = {
+        title: title,
+        keyword: keyword
+      }
+
+      await this.$store.dispatch('pages/addPage', data)
+
+      await this.loadPageList()
+
+      if (linkedPageKeyword) {
+        const newPage = this.$store.getters['pages/pageList'].find(page => page.keyword === keyword)
+        this.updateLink(newPage.pageId, linkedPageKeyword)
+      }
+
+      await this.loadNodeList()
+      await this.loadEdgeList()
+      this.$store.dispatch('pages/prepareGraphElements')
     },
-    async changePageHeader () {
+    async changePageHeader (title, keyword) {
       await this.$store.dispatch('pages/changePageHeader', {
         pageId: this.selectedPage.id,
-        title: this.selectedPage.title,
-        keyword: this.selectedPage.keyword
-      }).then((response) => {
-        this.loadPageList()
-        this.loadEdgeList()
-        this.$store.dispatch('pages/prepareGraphElements')
+        title: title,
+        keyword: keyword
       })
+
+      await this.loadPageList()
+      await this.loadNodeList()
+      await this.loadEdgeList()
+      await this.$store.dispatch('pages/prepareGraphElements')
     },
-    async changePageContent () {
+    async changePageContent (content) {
       await this.$store.dispatch('pages/changePageContent', {
         pageId: this.selectedPage.id,
-        content: this.selectedPage.content
-      }).then((response) => {
-        this.loadPageList()
+        content: content
       })
+
+      await this.loadPageList()
     },
     async deletePage () {
-      await this.$store.dispatch('pages/deletePage', { pageId: this.selectedPage.id }).then((response) => {
-        this.loadPageList()
-        this.loadNodeList()
-        this.$store.dispatch('pages/prepareGraphElements')
-      })
-      this.pageIsSelected = 'graph'
+      await this.$store.dispatch('pages/deletePage', { pageId: this.selectedPage.id })
+
+      await this.loadPageList()
+      await this.loadNodeList()
+      await this.loadEdgeList()
+      this.$store.dispatch('pages/prepareGraphElements')
+      this.changeCpnGraph()
     },
-    async updateLink () {
+    async updateLink (pageId, linkedPageKeyword) {
+      this.selectedPage.id = pageId
+      this.selectedPage.linkedPageKeyword = linkedPageKeyword
       const nodeList = this.$store.getters['pages/nodeList']
       const edgeList = this.$store.getters['pages/edgeList']
 
       const identifiedNode = nodeList.find(node => node.keyword === this.selectedPage.linkedPageKeyword) // 검색한 키워드가 존재하는지?
       const identifiedEdge = edgeList.find(edge => edge.pageId === this.selectedPage.id) // 기존의 link가 존재하는지?
 
-      if (this.selectedPage.id === identifiedNode.pageId) {
+      if (identifiedNode && this.selectedPage.id === identifiedNode.pageId) {
         alert('Unable to link')
         if (identifiedEdge) {
           const nodeInfo = nodeList.find(node => node.pageId === identifiedEdge.linkedPageId)
@@ -133,11 +177,12 @@ export default {
         if (identifiedEdge) {
           this.$store.dispatch('pages/deleteLink', {
             pageId: this.selectedPage.id,
-            linkedPageId: identifiedEdge.linkedPageId
-          }).then((response) => {
-            this.loadEdgeList()
-            this.$store.dispatch('pages/prepareGraphElements')
+            linkedPageId: identifiedEdge.linkedPageId,
+            linkage: 1
           })
+          await this.loadNodeList()
+          await this.loadEdgeList()
+          await this.$store.dispatch('pages/prepareGraphElements')
         }
         return
       }
@@ -155,73 +200,43 @@ export default {
         if (identifiedEdge) {
           this.$store.dispatch('pages/deleteLink', {
             pageId: this.selectedPage.id,
-            linkedPageId: identifiedEdge.linkedPageId
-          }).then((response) => {
-            this.loadEdgeList()
-            this.$store.dispatch('pages/prepareGraphElements')
+            linkedPageId: identifiedEdge.linkedPageId,
+            linkage: 1
           })
+          await this.loadNodeList()
+          await this.loadEdgeList()
+          await this.$store.dispatch('pages/prepareGraphElements')
         }
         this.$store.dispatch('pages/createLink', {
           pageId: this.selectedPage.id,
           linkedPageId: identifiedNode.pageId,
           linkage: 1
-        }).then((response) => {
-          this.loadEdgeList()
-          this.$store.dispatch('pages/prepareGraphElements')
         })
+        await this.loadNodeList()
+        await this.loadEdgeList()
+        await this.$store.dispatch('pages/prepareGraphElements')
       }
-    },
-    async showGraph () {
-      await this.$store.dispatch('pages/prepareGraphElements')
-      const elements = this.$store.getters['pages/graphElements']
-
-      cytoscape({
-        container: document.getElementById('cy'),
-        elements: elements,
-        style: [
-          {
-            selector: 'node',
-            style: {
-              'background-color': '#666',
-              label: 'data(keyword)' // 키워드로 라벨을 표시합니다.
-            }
-          },
-          {
-            selector: 'edge',
-            style: {
-              width: 3,
-              'line-color': '#ccc',
-              'target-arrow-color': '#ccc',
-              'target-arrow-shape': 'triangle'
-            }
-          }
-        ],
-        layout: {
-          name: 'grid',
-          rows: 3
-        }
-      })
     },
     setNoteId () {
       this.$store.dispatch('pages/setNoteId', this.noteId)
     },
-    loadPageList () {
+    async loadPageList () {
       try {
-        this.$store.dispatch('pages/loadPageList')
+        await this.$store.dispatch('pages/loadPageList')
       } catch (error) {
         this.error = error.message || 'Something went wrong!'
       }
     },
-    loadNodeList () {
+    async loadNodeList () {
       try {
-        this.$store.dispatch('pages/loadNodeList')
+        await this.$store.dispatch('pages/loadNodeList')
       } catch (error) {
         this.error = error.message || 'Something went wrong!'
       }
     },
-    loadEdgeList () {
+    async loadEdgeList () {
       try {
-        this.$store.dispatch('pages/loadEdgeList')
+        await this.$store.dispatch('pages/loadEdgeList')
       } catch (error) {
         this.error = error.message || 'Something went wrong!'
       }

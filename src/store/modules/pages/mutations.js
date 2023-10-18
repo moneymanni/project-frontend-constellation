@@ -2,6 +2,9 @@ export default {
   setNoteId (state, payload) {
     state.noteId = payload
   },
+  setPageId (state, payload) {
+    state.pageId = payload
+  },
   setPageList (state, payload) {
     state.pageList = payload
   },
@@ -13,5 +16,8 @@ export default {
   },
   setGraphElements (state, payload) {
     state.graphElements = payload
+  },
+  setRecommendKeywords (state, payload) {
+    state.recommendKeywords = payload
   }
 }

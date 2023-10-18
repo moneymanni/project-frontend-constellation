@@ -2,7 +2,17 @@ export default {
   setNoteId (context, data) {
     context.commit('setNoteId', data)
   },
+  setPageId (context, data) {
+    context.commit('setPageId', data)
+  },
   async addPage (context, data) {
+    const pageInfo = {
+      title: data.title,
+      keyword: data.keyword,
+      content: '',
+      noteId: context.getters.noteId
+    }
+
     const url = 'http://127.0.0.1:5000/page/create'
     const response = await fetch(url, {
       method: 'POST',
@@ -10,7 +20,7 @@ export default {
         'Content-Type': 'application/json',
         accessToken: context.rootGetters.accessToken
       },
-      body: JSON.stringify({ noteId: context.getters.noteId })
+      body: JSON.stringify(pageInfo)
     })
     // const responseData = await response.json();
     if (!response.ok) {
@@ -89,8 +99,7 @@ export default {
       },
       body: JSON.stringify(linkInfo)
     })
-    const responseData = await response.json()
-    console.log(responseData)
+    // const responseData = await response.json()
     if (!response.ok) {
       // error ...
     }
@@ -108,11 +117,39 @@ export default {
         linkedPageId: data.linkedPageId
       })
     })
-    const responseData = await response.json()
-    console.log(responseData)
+    // const responseData = await response.json()
     if (!response.ok) {
       // error ...
     }
+  },
+  async recommendKeywords (context, data) {
+    const url = `http://127.0.0.1:5000/recommend/association?keyword=${data}`
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        accessToken: context.rootGetters.accessToken
+      }
+    })
+    const responseData = await response.json()
+    if (!response.ok) {
+      const error = new Error(responseData.message || 'Failed to fetch!')
+      throw error
+    }
+
+    const keywordList = []
+
+    const alpabet = ['a', 'b', 'c', 'd', 'e']
+    let cnt = 0
+
+    // TODO: 차후 반드시 page_id를 pageId로 바꿀것
+    for (const item of responseData.data.recommend) {
+      const keyword = {
+        id: alpabet[cnt++],
+        keyword: item.keyword
+      }
+      keywordList.push(keyword)
+    }
+    context.commit('setRecommendKeywords', keywordList)
   },
   prepareGraphElements (context, _) {
     const nodeList = context.getters.nodeList || []
@@ -171,7 +208,8 @@ export default {
     const url = 'http://127.0.0.1:5000/visualization/node?noteId=' + context.getters.noteId
     const response = await fetch(url, {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        accessToken: context.rootGetters.accessToken
       }
     })
 
@@ -185,9 +223,9 @@ export default {
     const nodeList = []
 
     // TODO: 차후 반드시 page_id를 pageId로 바꿀것
-    for (const item of responseData.node) {
+    for (const item of responseData.data.nodeList) {
       const node = {
-        pageId: item.page_id,
+        pageId: item.pageId,
         keyword: item.keyword
       }
       nodeList.push(node)
@@ -198,7 +236,8 @@ export default {
     const url = 'http://127.0.0.1:5000/visualization/edge?noteId=' + context.getters.noteId
     const response = await fetch(url, {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        accessToken: context.rootGetters.accessToken
       }
     })
     const responseData = await response.json()
@@ -211,12 +250,12 @@ export default {
     const edgeList = []
 
     // TODO: 차후 반드시 pageId와 linkedPageId, createdAt으로 바꿀것
-    for (const item of responseData.edge) {
+    for (const item of responseData.data.edgeList) {
       const edge = {
-        pageId: item.page_id,
-        linkedPageId: item.linked_page_id,
+        pageId: item.pageId,
+        linkedPageId: item.linkedPageId,
         linkage: item.linkage,
-        createdAt: item.created_at
+        createdAt: item.createdAt
       }
       edgeList.push(edge)
     }

@@ -10,7 +10,8 @@ export default {
       pageList: [],
       nodeList: [],
       edgeList: [],
-      graphElements: []
+      graphElements: [],
+      recommendKeywords: []
     }
   },
   getters,

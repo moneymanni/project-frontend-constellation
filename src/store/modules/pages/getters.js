@@ -2,6 +2,9 @@ export default {
   noteId (state) {
     return state.noteId
   },
+  pageId (state) {
+    return state.pageId
+  },
   pageList (state) {
     return state.pageList
   },
@@ -13,5 +16,8 @@ export default {
   },
   graphElements (state) {
     return state.graphElements
+  },
+  recommendKeywords (state) {
+    return state.recommendKeywords
   }
 }

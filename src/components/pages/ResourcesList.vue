@@ -7,7 +7,7 @@
 
     <div class="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
 
-      <button type="button" class="btn btn-outline-primary" @click="$emit('add-page')">Add Page</button>
+      <button type="button" class="btn btn-outline-primary" @click="$emit('add-page', '', '')">Add Page</button>
 
       <p></p>
 
