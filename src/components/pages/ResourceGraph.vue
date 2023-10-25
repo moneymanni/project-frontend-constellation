@@ -1,13 +1,14 @@
 <template>
   <h2>Network Graph</h2>
-    <div id="cy"></div>
+    <div id="cy">
+    </div>
 </template>
 
 <script>
 import cytoscape from 'cytoscape'
 export default {
   props: ['graphElements'],
-  emits: ['add-page', 'update-link'],
+  emits: ['add-page'],
   mounted () {
     this.updateGraph()
   },
@@ -68,7 +69,7 @@ export default {
       let addNodes = []
       let selectNode = null
 
-      this.cy.on('tap', 'node', async (event) => {
+      this.cy.on('cxttap', 'node', async (event) => {
         if (selectNode) {
           const nodeToRemove = addNodes
           nodeToRemove.forEach((label) => {
@@ -79,7 +80,8 @@ export default {
         }
         const keywordsId = addNodes.map(node => node.id)
         if (keywordsId.includes(event.target.id())) {
-          this.$emit('add-page', event.target.data('keyword'), event.target.data('keyword'), selectNode.keyword)
+          // alert('Unable to link') 만약 에러 뜨면 alert로 처리
+          this.$emit('add-page', event.target.data('keyword'), event.target.data('keyword'), selectNode.id)
           selectNode = null
           return
         } else if (!!selectNode && selectNode.id === event.target.id()) {
@@ -154,6 +156,10 @@ export default {
 <style scoped>
 #cy {
   width: 100%;
-  height: 50em;
+  height: 48em;
+}
+
+.btn-group {
+  z-index: 1000;
 }
 </style>

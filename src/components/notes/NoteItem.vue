@@ -6,7 +6,10 @@
         <h6 class="mb-0">{{title}}</h6>
         <p class="mb-0 opacity-75">{{description}}</p>
       </div>
-      <small class="opacity-50 text-nowrap">{{at}}</small>
+      <small class="opacity-50 text-nowrap">
+        <div>hi</div>
+        <div>{{at}}</div>
+      </small>
     </div>
   </div>
 </template>

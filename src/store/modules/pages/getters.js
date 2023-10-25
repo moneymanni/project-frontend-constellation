@@ -2,9 +2,6 @@ export default {
   noteId (state) {
     return state.noteId
   },
-  pageId (state) {
-    return state.pageId
-  },
   pageList (state) {
     return state.pageList
   },

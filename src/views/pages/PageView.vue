@@ -22,10 +22,14 @@
         </div>
         <keep-alive>
           <component
+            v-if="selectedComponent === 'resource-graph'"
+            :is="selectedComponent"
+            :graphElements="this.$store.getters['pages/graphElements']"
+            @add-page="addPage"></component>
+          <component
+            v-else
             :is="selectedComponent"
             :page="this.selectedPage"
-            :graphElements="this.$store.getters['pages/graphElements']"
-            @add-page="addPage"
             @change-header="changePageHeader"
             @change-content="changePageContent"
             @update-link="updateLink"
@@ -57,10 +61,8 @@ export default {
         id: null,
         title: '',
         keyword: '',
-        tag: [],
         content: '',
-        linkedPageId: null,
-        linkedPageKeyword: ''
+        linkedPage: []
       },
       error: null
     }
@@ -84,29 +86,52 @@ export default {
       this.selectedComponent = 'resource-graph'
       this.$store.dispatch('pages/prepareGraphElements')
     },
-    selectPage (pageId) {
+    async selectPage (pageId) {
       const pageList = this.$store.getters['pages/pageList'] || []
-      const nodeList = this.$store.getters['pages/nodeList'] || []
-      const edgeList = this.$store.getters['pages/edgeList'] || []
 
       const identifiedPage = pageList.find(page => page.pageId === pageId)
       this.selectedPage.id = identifiedPage.pageId
       this.selectedPage.title = identifiedPage.title
       this.selectedPage.keyword = identifiedPage.keyword
       this.selectedPage.content = identifiedPage.content
+      await this.updateLinkedPage()
 
-      const identifiedEdge = edgeList.find(edge => edge.pageId === pageId)
-      if (identifiedEdge) {
-        const edgeName = nodeList.find(node => node.pageId === identifiedEdge.linkedPageId)
-        this.selectedPage.linkedPageId = identifiedEdge.linkedPageId
-        this.selectedPage.linkedPageKeyword = edgeName.keyword
-      } else {
-        this.selectedPage.linkedPageId = null
-        this.selectedPage.linkedPageKeyword = ''
-      }
       this.changeCpnContent()
     },
-    async addPage (title, keyword, linkedPageKeyword) {
+    async updateLinkedPage () {
+      const pageList = this.$store.getters['pages/pageList'] || []
+
+      this.selectedPage.linkedPage = []
+      const url = 'http://127.0.0.1:5000/link/list-on-page?pageId=' + this.selectedPage.id
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          accessToken: this.$store.getters.accessToken
+        }
+      })
+
+      const responseData = await response.json()
+
+      if (!response.ok) {
+        const error = new Error(responseData.message || 'Failed to fetch!')
+        throw error
+      }
+      for (const item of responseData.data.linkList) {
+        const link = {
+          pageId: item.pageId,
+          linkedPageId: item.linkedPageId,
+          linkage: item.linkage
+        }
+        const linkedPage = pageList.find(page => page.pageId === item.linkedPageId)
+        if (linkedPage) {
+          link.linkedPageKeyword = linkedPage.keyword
+        } else {
+          link.linkedPageKeyword = ''
+        }
+        this.selectedPage.linkedPage.push(link)
+      }
+    },
+    async addPage (title, keyword, linkedPageId) {
       const data = {
         title: title,
         keyword: keyword
@@ -116,9 +141,9 @@ export default {
 
       await this.loadPageList()
 
-      if (linkedPageKeyword) {
+      if (linkedPageId) {
         const newPage = this.$store.getters['pages/pageList'].find(page => page.keyword === keyword)
-        this.updateLink(newPage.pageId, linkedPageKeyword)
+        this.updateLink(newPage.pageId, linkedPageId)
       }
 
       await this.loadNodeList()
@@ -148,74 +173,52 @@ export default {
     async deletePage () {
       await this.$store.dispatch('pages/deletePage', { pageId: this.selectedPage.id })
 
+      this.selectedPage.id = null
+
       await this.loadPageList()
       await this.loadNodeList()
       await this.loadEdgeList()
       this.$store.dispatch('pages/prepareGraphElements')
       this.changeCpnGraph()
     },
-    async updateLink (pageId, linkedPageKeyword) {
-      this.selectedPage.id = pageId
-      this.selectedPage.linkedPageKeyword = linkedPageKeyword
+    async updateLink (pageId, linkedPageId) {
       const nodeList = this.$store.getters['pages/nodeList']
       const edgeList = this.$store.getters['pages/edgeList']
 
-      const identifiedNode = nodeList.find(node => node.keyword === this.selectedPage.linkedPageKeyword) // 검색한 키워드가 존재하는지?
-      const identifiedEdge = edgeList.find(edge => edge.pageId === this.selectedPage.id) // 기존의 link가 존재하는지?
+      const identifiedNode = nodeList.find(node => node.pageId === linkedPageId)
+      const identifiedEdge = edgeList.find(edge =>
+        (edge.pageId === pageId && edge.linkedPageId === identifiedNode.pageId) ||
+        (edge.pageId === identifiedNode.pageId && edge.linkedPageId === pageId)
+      )
 
-      if (identifiedNode && this.selectedPage.id === identifiedNode.pageId) {
-        alert('Unable to link')
-        if (identifiedEdge) {
-          const nodeInfo = nodeList.find(node => node.pageId === identifiedEdge.linkedPageId)
-          this.selectedPage.linkedPageKeyword = nodeInfo.keyword
-        } else {
-          this.selectedPage.linkedPageKeyword = ''
-        }
-      }
-
-      if (this.selectedPage.linkedPageKeyword === '' || !this.selectedPage.linkedPageKeyword) {
-        if (identifiedEdge) {
-          this.$store.dispatch('pages/deleteLink', {
-            pageId: this.selectedPage.id,
-            linkedPageId: identifiedEdge.linkedPageId,
-            linkage: 1
-          })
-          await this.loadNodeList()
-          await this.loadEdgeList()
-          await this.$store.dispatch('pages/prepareGraphElements')
-        }
-        return
-      }
-
-      if (!identifiedNode) {
-        alert('not exist')
-
-        if (identifiedEdge) {
-          const nodeInfo = nodeList.find(node => node.pageId === identifiedEdge.linkedPageId)
-          this.selectedPage.linkedPageKeyword = nodeInfo.keyword
-        } else {
-          this.selectedPage.linkedPageKeyword = ''
-        }
+      if (identifiedEdge) {
+        await this.deleteLink(this.selectedPage.id, linkedPageId)
       } else {
-        if (identifiedEdge) {
-          this.$store.dispatch('pages/deleteLink', {
-            pageId: this.selectedPage.id,
-            linkedPageId: identifiedEdge.linkedPageId,
-            linkage: 1
-          })
-          await this.loadNodeList()
-          await this.loadEdgeList()
-          await this.$store.dispatch('pages/prepareGraphElements')
-        }
-        this.$store.dispatch('pages/createLink', {
-          pageId: this.selectedPage.id,
-          linkedPageId: identifiedNode.pageId,
-          linkage: 1
-        })
-        await this.loadNodeList()
-        await this.loadEdgeList()
-        await this.$store.dispatch('pages/prepareGraphElements')
+        await this.createLink(this.selectedPage.id, linkedPageId)
       }
+
+      await this.updateLinkedPage()
+    },
+    async createLink (pageId, linkedPageId) {
+      this.$store.dispatch('pages/createLink', {
+        pageId: pageId,
+        linkedPageId: linkedPageId,
+        linkage: 1
+      })
+      await this.updateGraphElements()
+    },
+    async deleteLink (pageId, linkedPageId) {
+      this.$store.dispatch('pages/deleteLink', {
+        pageId: pageId,
+        linkedPageId: linkedPageId,
+        linkage: 1
+      })
+      await this.updateGraphElements()
+    },
+    async updateGraphElements () {
+      await this.loadNodeList()
+      await this.loadEdgeList()
+      await this.$store.dispatch('pages/prepareGraphElements')
     },
     setNoteId () {
       this.$store.dispatch('pages/setNoteId', this.noteId)

@@ -46,6 +46,7 @@ body {
 
 .container-fluid,
 .row {
+  /* height: 94.8vh; */
   height: 100%;
 }
 
