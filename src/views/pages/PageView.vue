@@ -144,9 +144,10 @@ export default {
 
       if (linkedPageId) {
         const newPage = this.$store.getters['pages/pageList'].find(page => page.keyword === keyword)
-        this.updateLink(newPage.pageId, linkedPageId)
+        if (newPage) {
+          this.updateLink(newPage.pageId, linkedPageId)
+        }
       }
-
       await this.loadNodeList()
       await this.loadEdgeList()
       this.$store.dispatch('pages/prepareGraphElements')
@@ -162,6 +163,9 @@ export default {
       await this.loadNodeList()
       await this.loadEdgeList()
       await this.$store.dispatch('pages/prepareGraphElements')
+
+      this.selectedPage.title = title
+      this.selectedPage.keyword = keyword
     },
     async changePageContent (content) {
       await this.$store.dispatch('pages/changePageContent', {
@@ -170,6 +174,7 @@ export default {
       })
 
       await this.loadPageList()
+      this.selectedPage.content = content
     },
     async deletePage () {
       await this.$store.dispatch('pages/deletePage', { pageId: this.selectedPage.id })
@@ -187,18 +192,23 @@ export default {
       const edgeList = this.$store.getters['pages/edgeList']
 
       const identifiedNode = nodeList.find(node => node.pageId === linkedPageId)
-      const identifiedEdge = edgeList.find(edge =>
-        (edge.pageId === pageId && edge.linkedPageId === identifiedNode.pageId) ||
-        (edge.pageId === identifiedNode.pageId && edge.linkedPageId === pageId)
-      )
-
-      if (identifiedEdge) {
-        await this.deleteLink(this.selectedPage.id, linkedPageId)
-      } else {
-        await this.createLink(this.selectedPage.id, linkedPageId)
+      let identifiedEdge = null
+      if (identifiedNode) {
+        identifiedEdge = edgeList.find(edge =>
+          (edge.pageId === pageId && edge.linkedPageId === identifiedNode.pageId) ||
+          (edge.pageId === identifiedNode.pageId && edge.linkedPageId === pageId)
+        )
       }
 
-      await this.updateLinkedPage()
+      if (identifiedEdge) {
+        await this.deleteLink(pageId, linkedPageId)
+      } else {
+        await this.createLink(pageId, linkedPageId)
+      }
+
+      if (this.selectedComponent !== 'resource-graph') {
+        await this.updateLinkedPage()
+      }
     },
     async createLink (pageId, linkedPageId) {
       this.$store.dispatch('pages/createLink', {
@@ -245,33 +255,7 @@ export default {
         this.error = error.message || 'Something went wrong!'
       }
     }
-    // async loadPageList () {
-    //   try {
-    //     await this.$store.dispatch('pages/loadPageList')
-    //   } catch (error) {
-    //     this.error = error.message || 'Something went wrong!'
-    //   }
-    // },
-    // async loadNodeList () {
-    //   try {
-    //     await this.$store.dispatch('pages/loadNodeList')
-    //   } catch (error) {
-    //     this.error = error.message || 'Something went wrong!'
-    //   }
-    // },
-    // async loadEdgeList () {
-    //   try {
-    //     await this.$store.dispatch('pages/loadEdgeList')
-    //   } catch (error) {
-    //     this.error = error.message || 'Something went wrong!'
-    //   }
-    // }
   }
-  // mounted () {
-  //   this.loadPageList()
-  //   this.loadNodeList()
-  //   this.loadEdgeList()
-  // }
 }
 </script>
 

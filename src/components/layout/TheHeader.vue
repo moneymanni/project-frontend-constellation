@@ -1,14 +1,20 @@
 <template>
   <header class="navbar sticky-top bg-dark flex-md-nowrap p-0 shadow" data-bs-theme="dark">
-    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-white" href="#">
+    <div class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-white" @click="moveNote">
       <img src="@/assets/stars-icon.png" alt="Logo" width="30" height="24">
       Constellation
-    </a>
+    </div>
   </header>
 </template>
 
 <script>
 export default {
+  methods: {
+    moveNote () {
+      const redirectUrl = '/' + (this.$route.query.redirect || 'notes')
+      this.$router.replace(redirectUrl)
+    }
+  }
 }
 </script>
 

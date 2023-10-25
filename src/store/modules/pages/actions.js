@@ -122,8 +122,13 @@ export default {
       // error ...
     }
   },
-  async recommendKeywords (context, data) {
-    const url = `http://127.0.0.1:5000/recommend/association?keyword=${data}`
+  async recommendKeywords (context, payload) {
+    let url = `http://127.0.0.1:5000/recommend/association?keyword=${payload.node.keyword}&pageId=${payload.node.id}`
+
+    if (payload.mode === 'trend') {
+      url = `http://127.0.0.1:5000/recommend/trend?keyword=${payload.node.keyword}&pageId=${payload.node.id}`
+    }
+
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
