@@ -1,38 +1,36 @@
 <template>
   <h2>Network Graph</h2>
-    <div id="cy">
-    </div>
+  <div id="cy"></div>
 </template>
 
 <script>
 import cytoscape from 'cytoscape'
+import coseBilkent from 'cytoscape-cose-bilkent'
+
 export default {
   props: ['graphElements'],
-  emits: ['add-page'],
-  mounted () {
-    this.updateGraph()
-  },
+  emits: ['add-page', 'change-component'],
   data () {
     return {
       cy: null
     }
   },
+  mounted () {
+    this.mountedGraph()
+  },
   watch: {
     graphElements: {
       deep: true,
       handler () {
-        this.updateGraph()
+        this.mountedGraph()
       }
     }
   },
   methods: {
-    updateGraph () {
+    mountedGraph () {
+      cytoscape.use(coseBilkent)
       const cyContainer = document.getElementById('cy')
-      // const addNodes = []
 
-      if (this.cy) {
-        this.cy.destroy()
-      }
       this.cy = cytoscape({
         container: cyContainer,
         elements: this.graphElements,
@@ -53,17 +51,17 @@ export default {
               'target-arrow-shape': 'triangle'
             }
           }
-          // {
-          //   selector: addNodes.map(id => `[id='${id}']`).join(', '),
-          //   style: {
-          //     'background-color': '#87CEEB' // 하늘색
-          //   }
-          // }
         ],
         layout: {
-          name: 'grid',
-          rows: 3
-        }
+          name: 'cose-bilkent',
+          animate: false,
+          gravityRangeCompound: 1.5,
+          fit: true,
+          tile: true
+        },
+        minZoom: 0.5,
+        maxZoom: 3,
+        zoom: 1
       })
 
       let addNodes = []

@@ -1,9 +1,9 @@
 <template>
   <div class="input-group mb-3">
-    <input id="title" type="text" class="form-control" placeholder="Title" v-model="localPage.title" @input="updateKeyword" @change="$emit('change-header', localPage.title, localPage.keyword)" >
+    <input id="title" type="text" class="form-control" placeholder="Title" v-model="localPage.title" @input="updateKeyword" @change="handleKeywordInput()" >
   </div>
   <div class="input-group mb-3">
-    <input id="keyword" type="text" class="form-control" placeholder="Keyword" v-model="localPage.keyword" @change="$emit('change-header', localPage.title, localPage.keyword)" >
+    <input id="keyword" type="text" class="form-control" placeholder="Keyword" v-model="localPage.keyword" @change="handleKeywordInput()" >
   </div>
   <!-- <div class="input-group">
     <input id="link" type="text" class="form-control" placeholder="Link" v-model="localPage.linkedPageKeyword" @change="$emit('update-link', localPage.id, localPage.linkedPageKeyword)" >
@@ -66,6 +66,9 @@ export default {
         return 'Link'
       }
       return ''
+    },
+    nodeList () {
+      return this.$store.getters['pages/nodeList']
     }
   },
   watch: {
@@ -98,8 +101,15 @@ export default {
         this.localPage.keyword = this.localPage.title
       }
     },
-    clickSpan (keyword) {
-      console.log(keyword)
+    handleKeywordInput () {
+      this.$emit('change-header', this.localPage.title, this.localPage.keyword)
+
+      const isDuplicate = this.nodeList.some(node => node.keyword === this.localPage.keyword)
+      if (isDuplicate) {
+        alert('이미 존재하는 키워드입니다.')
+        this.localPage.keyword = ''
+        this.titleAndKeywordAreSame = false
+      }
     }
   }
 }

@@ -20,21 +20,20 @@
             </button> -->
           </div>
         </div>
-        <keep-alive>
-          <component
-            v-if="selectedComponent === 'resource-graph'"
-            :is="selectedComponent"
-            :graphElements="this.$store.getters['pages/graphElements']"
-            @add-page="addPage"></component>
-          <component
-            v-else
-            :is="selectedComponent"
-            :page="this.selectedPage"
-            @change-header="changePageHeader"
-            @change-content="changePageContent"
-            @update-link="updateLink"
-            @delete-page="deletePage"></component>
-        </keep-alive>
+        <!-- <keep-alive></keep-alive> -->
+        <component
+          v-if="selectedComponent === 'resource-graph' && isGraphReady"
+          :is="selectedComponent"
+          :graphElements="this.$store.getters['pages/graphElements']"
+          @add-page="addPage"></component>
+        <component
+          v-else-if="selectedComponent === 'resource-content'"
+          :is="selectedComponent"
+          :page="this.selectedPage"
+          @change-header="changePageHeader"
+          @change-content="changePageContent"
+          @update-link="updateLink"
+          @delete-page="deletePage"></component>
       </main>
     </div>
   </div>
@@ -56,6 +55,7 @@ export default {
   props: ['noteId'],
   data () {
     return {
+      isGraphReady: false,
       selectedComponent: 'resource-graph',
       selectedPage: {
         id: null,
@@ -73,6 +73,7 @@ export default {
     await this.loadNodeList()
     await this.loadEdgeList()
     this.$store.dispatch('pages/prepareGraphElements')
+    this.isGraphReady = true
   },
   methods: {
     changeCpnContent () {
