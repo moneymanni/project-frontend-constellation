@@ -82,7 +82,11 @@ export default {
 
       const identifiedPage = pageList.find(page => String(page.pageId) === String(this.node.id))
       this.miniPage.id = identifiedPage.pageId
-      this.miniPage.title = identifiedPage.title
+      if (identifiedPage.title === '') {
+        this.miniPage.title = '제목 없음'
+      } else {
+        this.miniPage.title = identifiedPage.title
+      }
       this.miniPage.keyword = identifiedPage.keyword
       if (identifiedPage.content === '') {
         this.miniPage.content = '내용 없음'

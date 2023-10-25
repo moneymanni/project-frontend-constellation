@@ -2,7 +2,7 @@
   <header class="navbar sticky-top bg-dark flex-md-nowrap p-0 shadow" data-bs-theme="dark">
     <div class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-white" @click="moveNote">
       <img src="@/assets/stars-icon.png" alt="Logo" width="30" height="24">
-      Constellation
+      Mind Web
     </div>
   </header>
 </template>
