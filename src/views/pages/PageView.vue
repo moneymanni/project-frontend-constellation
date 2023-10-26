@@ -104,7 +104,7 @@ export default {
       const pageList = this.$store.getters['pages/pageList'] || []
 
       this.selectedPage.linkedPage = []
-      const url = 'http://127.0.0.1:5000/link/list-on-page?pageId=' + this.selectedPage.id
+      const url = process.env.VUE_APP_URL + '/link/list-on-page?pageId=' + this.selectedPage.id
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',

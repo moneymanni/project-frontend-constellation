@@ -7,7 +7,7 @@ export default {
       sharedPermission: 1
     }
 
-    const url = 'http://127.0.0.1:5000/note/create'
+    const url = process.env.VUE_APP_URL + '/note/create'
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -23,7 +23,7 @@ export default {
   },
   async loadNoteList (context, payload) {
     // 노트 리스트를 백엔드로부터 fetch하는 작업
-    const url = 'http://127.0.0.1:5000/note/list'
+    const url = process.env.VUE_APP_URL + '/note/list'
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',

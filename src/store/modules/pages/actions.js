@@ -13,7 +13,7 @@ export default {
       noteId: context.getters.noteId
     }
 
-    const url = 'http://127.0.0.1:5000/page/create'
+    const url = process.env.VUE_APP_URL + '/page/create'
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -34,7 +34,7 @@ export default {
       pageId: data.pageId
     }
 
-    const url = 'http://127.0.0.1:5000/page/update-header'
+    const url = process.env.VUE_APP_URL + '/page/update-header'
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -54,7 +54,7 @@ export default {
       content: data.content
     }
 
-    const url = 'http://127.0.0.1:5000/page/update-content'
+    const url = process.env.VUE_APP_URL + '/page/update-content'
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -69,7 +69,7 @@ export default {
     }
   },
   async deletePage (context, data) {
-    const url = 'http://127.0.0.1:5000/page/delete'
+    const url = process.env.VUE_APP_URL + '/page/delete'
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -90,7 +90,7 @@ export default {
       linkage: data.linkage
     }
 
-    const url = 'http://127.0.0.1:5000/link/create'
+    const url = process.env.VUE_APP_URL + '/link/create'
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -105,7 +105,7 @@ export default {
     }
   },
   async deleteLink (context, data) {
-    const url = 'http://127.0.0.1:5000/link/delete'
+    const url = process.env.VUE_APP_URL + '/link/delete'
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -123,10 +123,10 @@ export default {
     }
   },
   async recommendKeywords (context, payload) {
-    let url = `http://127.0.0.1:5000/recommend/association?keyword=${payload.node.keyword}&pageId=${payload.node.id}`
+    let url = process.env.VUE_APP_URL + `/recommend/association?keyword=${payload.node.keyword}&pageId=${payload.node.id}`
 
     if (payload.mode === 'trend') {
-      url = `http://127.0.0.1:5000/recommend/trend?keyword=${payload.node.keyword}&pageId=${payload.node.id}`
+      url = process.env.VUE_APP_URL + `/recommend/trend?keyword=${payload.node.keyword}&pageId=${payload.node.id}`
     }
 
     const response = await fetch(url, {
@@ -179,7 +179,7 @@ export default {
     context.commit('setGraphElements', elements)
   },
   async loadPageList (context, payload) {
-    const url = 'http://127.0.0.1:5000/page/list?noteId=' + context.getters.noteId
+    const url = process.env.VUE_APP_URL + '/page/list?noteId=' + context.getters.noteId
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ export default {
     context.commit('setPageList', pageList)
   },
   async loadNodeList (context, payload) {
-    const url = 'http://127.0.0.1:5000/visualization/node?noteId=' + context.getters.noteId
+    const url = process.env.VUE_APP_URL + '/visualization/node?noteId=' + context.getters.noteId
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -238,7 +238,7 @@ export default {
     context.commit('setNodeList', nodeList)
   },
   async loadEdgeList (context, payload) {
-    const url = 'http://127.0.0.1:5000/visualization/edge?noteId=' + context.getters.noteId
+    const url = process.env.VUE_APP_URL + '/visualization/edge?noteId=' + context.getters.noteId
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',

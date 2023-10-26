@@ -99,7 +99,7 @@ export default {
         this.miniPage.content = identifiedPage.content
       }
 
-      const url = 'http://127.0.0.1:5000/link/list-on-page?pageId=' + this.node.id
+      const url = process.env.VUE_APP_URL + '/link/list-on-page?pageId=' + this.node.id
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,6 @@ export default {
         throw error
       }
       for (const item of responseData.data.linkList) {
-        console.log(item)
         const link = {
           pageId: item.pageId,
           linkedPageId: item.linkedPageId,

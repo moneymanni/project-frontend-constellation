@@ -3,10 +3,10 @@ let timer // eslint-disable-line no-unused-vars
 export default {
   async auth (context, payload) {
     const mode = payload.mode
-    let url = 'http://127.0.0.1:5000/auth/sign-in'
+    let url = process.env.VUE_APP_URL + '/auth/sign-in'
 
     if (mode === 'signup') {
-      url = 'http://127.0.0.1:5000/user/sign-up'
+      url = process.env.VUE_APP_URL + '/user/sign-up'
     }
     const response = await fetch(url, {
       method: 'POST',
