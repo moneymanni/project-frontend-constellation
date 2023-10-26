@@ -25,6 +25,7 @@
           v-if="selectedComponent === 'resource-graph' && isGraphReady"
           :is="selectedComponent"
           :graphElements="this.$store.getters['pages/graphElements']"
+          @go-page="selectPage"
           @add-page="addPage"></component>
         <component
           v-else-if="selectedComponent === 'resource-content'"

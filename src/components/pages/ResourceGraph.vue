@@ -14,11 +14,12 @@
     :style="{ top: buttonBoxTop + 170 + 'px', left: buttonBoxLeft + 340 + 'px', width: '30rem' }">
     <div class="card-body">
       <h3 class="card-title">{{miniPage.title}}<h6>keyword: {{miniPage.keyword}}</h6></h3>
-      <div class="d-inline-block" v-for="link in miniPage.link" :key="link.linkedPageId">
+      <div class="card-text d-inline-block" v-for="link in miniPage.link" :key="link.linkedPageId">
         <span class="badge rounded-pill text-bg-primary me-1" style="max-width: 18rem; word-wrap: break-word;">{{link.linkedPageKeyword}}</span>
       </div>
       <p></p>
       <p class="card-text">{{miniPage.content}}</p>
+      <a class="btn btn-primary" @click="goPage">Go Page</a>
     </div>
   </div>
 </template>
@@ -29,7 +30,7 @@ import coseBilkent from 'cytoscape-cose-bilkent'
 
 export default {
   props: ['graphElements'],
-  emits: ['add-page', 'change-component'],
+  emits: ['add-page', 'go-page'],
   data () {
     return {
       cy: null,
@@ -69,6 +70,10 @@ export default {
     }
   },
   methods: {
+    goPage () {
+      this.$emit('go-page', this.miniPage.id)
+      this.showNodeInfoCard = false
+    },
     async updateCard () {
       this.miniPage = {
         id: null,
@@ -109,6 +114,7 @@ export default {
         throw error
       }
       for (const item of responseData.data.linkList) {
+        console.log(item)
         const link = {
           pageId: item.pageId,
           linkedPageId: item.linkedPageId,
@@ -120,7 +126,11 @@ export default {
         } else {
           link.linkedPageKeyword = ''
         }
-        this.miniPage.link.push(link)
+        const keywordExists = this.miniPage.link.some(existingLink => existingLink.linkedPageKeyword === link.linkedPageKeyword)
+
+        if (!keywordExists) {
+          this.miniPage.link.push(link)
+        }
       }
     },
     async recommend (mode) {
